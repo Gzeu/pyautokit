@@ -1,46 +1,11 @@
-# Include important files
 include README.md
 include LICENSE
 include requirements.txt
 include .env.example
 include pytest.ini
-include setup.py
-include setup.cfg
-include pyproject.toml
-
-# Include examples
-recursive-include examples *.py
-recursive-include examples *.md
-
-# Include tests
+recursive-include pyautokit *.py
+recursive-include examples *.py *.md
 recursive-include tests *.py
-
-# Exclude compiled Python files
-global-exclude *.py[cod]
-global-exclude __pycache__
-global-exclude *.so
-global-exclude .DS_Store
-
-# Exclude version control
-global-exclude .git*
-global-exclude .github*
-
-# Exclude build artifacts
-global-exclude *.egg-info
-global-exclude dist
-global-exclude build
-
-# Exclude IDE files
-global-exclude .vscode
-global-exclude .idea
-global-exclude *.swp
-global-exclude *.swo
-
-# Exclude temporary files
-global-exclude *~
-global-exclude *.bak
-
-# Exclude logs and data
-global-exclude logs
-global-exclude data
-global-exclude backups
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * .DS_Store

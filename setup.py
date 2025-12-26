@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Setup script for PyAutokit."""
+"""PyAutokit setup script for PyPI distribution."""
 
 from setuptools import setup, find_packages
 from pathlib import Path
 
-# Read long description from README
+# Read README for long description
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
 # Read requirements
 requirements = []
-with open("requirements.txt", "r", encoding="utf-8") as f:
+with open("requirements.txt") as f:
     for line in f:
         line = line.strip()
         if line and not line.startswith("#"):
@@ -22,15 +22,16 @@ setup(
     name="pyautokit",
     version="1.0.0",
     author="George Pricop",
-    author_email="96602369+Gzeu@users.noreply.github.com",
+    author_email="contact@georgepricop.com",
     description="Python Automation Toolkit - Complete CLI utilities for everyday tasks",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Gzeu/pyautokit",
     project_urls={
-        "Bug Reports": "https://github.com/Gzeu/pyautokit/issues",
-        "Source": "https://github.com/Gzeu/pyautokit",
-        "Documentation": "https://github.com/Gzeu/pyautokit#readme",
+        "Bug Tracker": "https://github.com/Gzeu/pyautokit/issues",
+        "Documentation": "https://github.com/Gzeu/pyautokit/blob/main/README.md",
+        "Source Code": "https://github.com/Gzeu/pyautokit",
+        "Examples": "https://github.com/Gzeu/pyautokit/tree/main/examples",
     },
     packages=find_packages(exclude=["tests", "tests.*", "examples", "examples.*"]),
     classifiers=[
@@ -47,7 +48,6 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Operating System :: OS Independent",
-        "Environment :: Console",
         "Natural Language :: English",
     ],
     keywords=[
@@ -58,9 +58,9 @@ setup(
         "web-scraper",
         "email-automation",
         "backup",
-        "security",
         "blockchain",
-        "cryptocurrency",
+        "crypto",
+        "security",
         "data-processing",
         "productivity",
     ],
@@ -75,22 +75,22 @@ setup(
             "mypy>=1.5.0",
         ],
         "watch": [
-            "watchdog>=3.0.0",  # For file monitoring in file_organizer
+            "watchdog>=3.0.0",
         ],
         "all": [
-            "watchdog>=3.0.0",
             "pytest>=7.4.0",
             "pytest-cov>=4.1.0",
             "black>=23.0.0",
             "flake8>=6.0.0",
             "mypy>=1.5.0",
+            "watchdog>=3.0.0",
         ],
     },
     entry_points={
         "console_scripts": [
             "pyautokit=pyautokit.__main__:main",
-            "pyautokit-organize=pyautokit.file_organizer:main",
-            "pyautokit-scrape=pyautokit.web_scraper:main",
+            "pyautokit-organizer=pyautokit.file_organizer:main",
+            "pyautokit-scraper=pyautokit.web_scraper:main",
             "pyautokit-email=pyautokit.email_automation:main",
             "pyautokit-backup=pyautokit.backup_manager:main",
             "pyautokit-logs=pyautokit.log_analyzer:main",

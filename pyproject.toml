@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "pyautokit"
 version = "1.0.0"
 authors = [
-    {name = "George Pricop", email = "96602369+Gzeu@users.noreply.github.com"},
+    {name = "George Pricop", email = "contact@georgepricop.com"},
 ]
 description = "Python Automation Toolkit - Complete CLI utilities for everyday tasks"
 readme = "README.md"
@@ -25,7 +25,6 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Operating System :: OS Independent",
-    "Environment :: Console",
 ]
 keywords = [
     "automation",
@@ -35,11 +34,9 @@ keywords = [
     "web-scraper",
     "email-automation",
     "backup",
-    "security",
     "blockchain",
-    "cryptocurrency",
-    "data-processing",
-    "productivity",
+    "crypto",
+    "security",
 ]
 dependencies = [
     "python-dotenv>=1.0.0",
@@ -62,24 +59,25 @@ watch = [
     "watchdog>=3.0.0",
 ]
 all = [
-    "watchdog>=3.0.0",
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
     "black>=23.0.0",
     "flake8>=6.0.0",
     "mypy>=1.5.0",
+    "watchdog>=3.0.0",
 ]
 
 [project.urls]
 "Homepage" = "https://github.com/Gzeu/pyautokit"
-"Bug Reports" = "https://github.com/Gzeu/pyautokit/issues"
-"Source" = "https://github.com/Gzeu/pyautokit"
-"Documentation" = "https://github.com/Gzeu/pyautokit#readme"
+"Bug Tracker" = "https://github.com/Gzeu/pyautokit/issues"
+"Documentation" = "https://github.com/Gzeu/pyautokit/blob/main/README.md"
+"Source Code" = "https://github.com/Gzeu/pyautokit"
+"Examples" = "https://github.com/Gzeu/pyautokit/tree/main/examples"
 
 [project.scripts]
 pyautokit = "pyautokit.__main__:main"
-pyautokit-organize = "pyautokit.file_organizer:main"
-pyautokit-scrape = "pyautokit.web_scraper:main"
+pyautokit-organizer = "pyautokit.file_organizer:main"
+pyautokit-scraper = "pyautokit.web_scraper:main"
 pyautokit-email = "pyautokit.email_automation:main"
 pyautokit-backup = "pyautokit.backup_manager:main"
 pyautokit-logs = "pyautokit.log_analyzer:main"
@@ -87,8 +85,14 @@ pyautokit-data = "pyautokit.data_processor:main"
 pyautokit-security = "pyautokit.security_utils:main"
 pyautokit-crypto = "pyautokit.blockchain_monitor:main"
 
+[tool.setuptools]
+packages = ["pyautokit"]
+
+[tool.setuptools.package-data]
+pyautokit = ["py.typed"]
+
 [tool.black]
-line-length = 100
+line-length = 88
 target-version = ['py39', 'py310', 'py311', 'py312']
 include = '\.pyi?$'
 exclude = '''
@@ -112,6 +116,25 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 addopts = "-v --strict-markers --tb=short"
+markers = [
+    "slow: marks tests as slow",
+    "integration: marks tests as integration tests",
+]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+follow_imports = "normal"
+ignore_missing_imports = true
 
 [tool.coverage.run]
 source = ["pyautokit"]
