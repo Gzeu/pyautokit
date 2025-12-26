@@ -12,7 +12,10 @@ schedule>=1.2.0
 # Security
 cryptography>=41.0.0
 
-# Development dependencies (optional)
+# File monitoring (optional for auto-organize)
+watchdog>=3.0.0
+
+# Development dependencies
 pytest>=7.4.0
 pytest-cov>=4.1.0
 black>=23.0.0
