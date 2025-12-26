@@ -277,3 +277,4 @@ class TestFileOrganizer:
         for filename, expected_category in test_cases:
             path = Path(filename)
             assert organizer.categorize_file(path) == expected_category
+
