@@ -26,19 +26,19 @@ class BackupManager:
 
     def __init__(
         self,
-        backup_dir: Path = Config.BACKUP_DIR,
+        BACKUPS_DIR: Path = Config.BACKUPS_DIR,
         compression: str = Config.BACKUP_COMPRESSION,
         keep_versions: int = Config.BACKUP_KEEP_VERSIONS
     ):
         """Initialize backup manager.
         
         Args:
-            backup_dir: Directory to store backups
+            BACKUPS_DIR: Directory to store backups
             compression: Compression format (zip, tar, tar.gz)
             keep_versions: Number of versions to keep (0 = unlimited)
         """
-        self.backup_dir = Path(backup_dir)
-        self.backup_dir.mkdir(parents=True, exist_ok=True)
+        self.BACKUPS_DIR = Path(BACKUPS_DIR)
+        self.BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
         self.compression = compression.lower()
         self.keep_versions = keep_versions
 
@@ -90,7 +90,7 @@ class BackupManager:
             return None
         
         backup_name = name or self._get_backup_name(source)
-        backup_path = self.backup_dir / backup_name
+        backup_path = self.BACKUPS_DIR / backup_name
         
         try:
             logger.info(f"Creating backup: {source} -> {backup_path}")
@@ -137,7 +137,7 @@ class BackupManager:
         
         pattern = f"{base_name}_*"
         backups = sorted(
-            self.backup_dir.glob(pattern),
+            self.BACKUPS_DIR.glob(pattern),
             key=lambda p: p.stat().st_mtime,
             reverse=True
         )
@@ -157,7 +157,7 @@ class BackupManager:
         """
         pattern = f"{filter_name}_*" if filter_name else "*"
         backups = sorted(
-            self.backup_dir.glob(pattern),
+            self.BACKUPS_DIR.glob(pattern),
             key=lambda p: p.stat().st_mtime,
             reverse=True
         )
@@ -285,8 +285,8 @@ def main() -> int:
     # Global options
     parser.add_argument(
         "--backup-dir",
-        default=Config.BACKUP_DIR,
-        help=f"Backup directory (default: {Config.BACKUP_DIR})"
+        default=Config.BACKUPS_DIR,
+        help=f"Backup directory (default: {Config.BACKUPS_DIR})"
     )
     parser.add_argument(
         "--verbose",
@@ -305,7 +305,7 @@ def main() -> int:
         logger.setLevel("DEBUG")
     
     manager = BackupManager(
-        backup_dir=Path(args.backup_dir),
+        BACKUPS_DIR=Path(args.BACKUPS_DIR),
         compression=getattr(args, 'compression', Config.BACKUP_COMPRESSION),
         keep_versions=getattr(args, 'keep', Config.BACKUP_KEEP_VERSIONS)
     )
