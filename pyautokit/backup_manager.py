@@ -1,25 +1,32 @@
-"""Backup management with compression and versioning."""
+"""Backup management with compression and versioning.
+
+Features:
+- Multiple compression formats (ZIP, TAR, TAR.GZ)
+- Version management
+- Incremental backups
+- Easy restore functionality
+"""
 
 import argparse
+import sys
 import shutil
-import zipfile
 import tarfile
+import zipfile
 from pathlib import Path
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional, List
 from .logger import setup_logger
 from .config import Config
-from .utils import format_bytes, get_file_hash
 
 logger = setup_logger("BackupManager", level=Config.LOG_LEVEL)
 
 
 class BackupManager:
-    """Manage backups with compression and versioning."""
+    """Backup management with versioning."""
 
     def __init__(
         self,
-        backup_dir: Path = Config.BACKUPS_DIR,
+        backup_dir: Path = Config.BACKUP_DIR,
         compression: str = Config.BACKUP_COMPRESSION,
         keep_versions: int = Config.BACKUP_KEEP_VERSIONS
     ):
@@ -27,54 +34,40 @@ class BackupManager:
         
         Args:
             backup_dir: Directory to store backups
-            compression: Compression type (zip, tar, tar.gz)
-            keep_versions: Number of backup versions to keep
+            compression: Compression format (zip, tar, tar.gz)
+            keep_versions: Number of versions to keep (0 = unlimited)
         """
         self.backup_dir = Path(backup_dir)
         self.backup_dir.mkdir(parents=True, exist_ok=True)
-        self.compression = compression
+        self.compression = compression.lower()
         self.keep_versions = keep_versions
 
-    def _get_timestamp(self) -> str:
-        """Get formatted timestamp for backup naming."""
-        return datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    def _create_zip_backup(
+    def _get_backup_name(
         self,
         source: Path,
-        backup_path: Path
-    ) -> None:
-        """Create ZIP backup.
+        timestamp: Optional[str] = None
+    ) -> str:
+        """Generate backup filename.
         
         Args:
-            source: Source directory or file
-            backup_path: Backup file path
+            source: Source path being backed up
+            timestamp: Optional timestamp (auto-generated if not provided)
+            
+        Returns:
+            Backup filename
         """
-        with zipfile.ZipFile(backup_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-            if source.is_file():
-                zipf.write(source, source.name)
-            else:
-                for file_path in source.rglob("*"):
-                    if file_path.is_file():
-                        arcname = file_path.relative_to(source.parent)
-                        zipf.write(file_path, arcname)
-
-    def _create_tar_backup(
-        self,
-        source: Path,
-        backup_path: Path,
-        compression: Optional[str] = None
-    ) -> None:
-        """Create TAR backup.
+        if not timestamp:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        Args:
-            source: Source directory or file
-            backup_path: Backup file path
-            compression: Compression mode (gz, bz2, xz)
-        """
-        mode = f"w:{compression}" if compression else "w"
-        with tarfile.open(backup_path, mode) as tar:
-            tar.add(source, arcname=source.name)
+        name = source.name
+        if self.compression == "zip":
+            return f"{name}_{timestamp}.zip"
+        elif self.compression == "tar":
+            return f"{name}_{timestamp}.tar"
+        elif self.compression == "tar.gz":
+            return f"{name}_{timestamp}.tar.gz"
+        else:
+            return f"{name}_{timestamp}.backup"
 
     def create_backup(
         self,
@@ -84,52 +77,65 @@ class BackupManager:
         """Create backup of source.
         
         Args:
-            source: Source path to backup
-            name: Custom backup name (default: source name)
+            source: Path to backup
+            name: Optional custom backup name
             
         Returns:
             Path to created backup or None on failure
         """
-        source = Path(source)
+        source = Path(source).resolve()
+        
         if not source.exists():
             logger.error(f"Source not found: {source}")
             return None
-
-        if name is None:
-            name = source.name
         
-        timestamp = self._get_timestamp()
+        backup_name = name or self._get_backup_name(source)
+        backup_path = self.backup_dir / backup_name
         
-        if self.compression == "zip":
-            backup_path = self.backup_dir / f"{name}_{timestamp}.zip"
-            self._create_zip_backup(source, backup_path)
-        elif self.compression == "tar":
-            backup_path = self.backup_dir / f"{name}_{timestamp}.tar"
-            self._create_tar_backup(source, backup_path)
-        elif self.compression == "tar.gz":
-            backup_path = self.backup_dir / f"{name}_{timestamp}.tar.gz"
-            self._create_tar_backup(source, backup_path, "gz")
-        else:
-            # No compression - direct copy
-            backup_path = self.backup_dir / f"{name}_{timestamp}"
-            if source.is_file():
-                shutil.copy2(source, backup_path)
+        try:
+            logger.info(f"Creating backup: {source} -> {backup_path}")
+            
+            if self.compression == "zip":
+                self._create_zip(source, backup_path)
+            elif self.compression == "tar":
+                self._create_tar(source, backup_path, compressed=False)
+            elif self.compression == "tar.gz":
+                self._create_tar(source, backup_path, compressed=True)
             else:
-                shutil.copytree(source, backup_path)
-
-        size = format_bytes(backup_path.stat().st_size)
-        logger.info(f"Backup created: {backup_path.name} ({size})")
+                logger.error(f"Unknown compression: {self.compression}")
+                return None
+            
+            logger.info(f"Backup created: {backup_path}")
+            self._cleanup_old_versions(source.name)
+            
+            return backup_path
         
-        self._cleanup_old_backups(name)
-        return backup_path
+        except Exception as e:
+            logger.error(f"Backup failed: {e}")
+            return None
 
-    def _cleanup_old_backups(self, name: str) -> None:
-        """Remove old backup versions.
+    def _create_zip(self, source: Path, output: Path) -> None:
+        """Create ZIP backup."""
+        with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            if source.is_file():
+                zipf.write(source, source.name)
+            else:
+                for file in source.rglob('*'):
+                    if file.is_file():
+                        zipf.write(file, file.relative_to(source.parent))
+
+    def _create_tar(self, source: Path, output: Path, compressed: bool) -> None:
+        """Create TAR backup."""
+        mode = 'w:gz' if compressed else 'w'
+        with tarfile.open(output, mode) as tar:
+            tar.add(source, arcname=source.name)
+
+    def _cleanup_old_versions(self, base_name: str) -> None:
+        """Remove old backup versions."""
+        if self.keep_versions <= 0:
+            return
         
-        Args:
-            name: Backup name prefix
-        """
-        pattern = f"{name}_*"
+        pattern = f"{base_name}_*"
         backups = sorted(
             self.backup_dir.glob(pattern),
             key=lambda p: p.stat().st_mtime,
@@ -137,42 +143,38 @@ class BackupManager:
         )
         
         for old_backup in backups[self.keep_versions:]:
+            logger.info(f"Removing old backup: {old_backup}")
             old_backup.unlink()
-            logger.info(f"Removed old backup: {old_backup.name}")
 
-    def list_backups(self, name: Optional[str] = None) -> List[Dict]:
+    def list_backups(self, filter_name: Optional[str] = None) -> List[Path]:
         """List available backups.
         
         Args:
-            name: Filter by backup name
+            filter_name: Optional name filter
             
         Returns:
-            List of backup info dicts
+            List of backup paths
         """
-        pattern = f"{name}_*" if name else "*"
-        backups = []
-        
-        for backup_path in sorted(self.backup_dir.glob(pattern)):
-            stat = backup_path.stat()
-            backups.append({
-                "name": backup_path.name,
-                "path": str(backup_path),
-                "size": format_bytes(stat.st_size),
-                "created": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-            })
-        
+        pattern = f"{filter_name}_*" if filter_name else "*"
+        backups = sorted(
+            self.backup_dir.glob(pattern),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True
+        )
         return backups
 
     def restore_backup(
         self,
         backup_path: Path,
-        destination: Path
+        destination: Path,
+        overwrite: bool = False
     ) -> bool:
         """Restore backup to destination.
         
         Args:
-            backup_path: Backup file path
+            backup_path: Path to backup file
             destination: Restore destination
+            overwrite: Overwrite existing files
             
         Returns:
             True if successful
@@ -183,64 +185,184 @@ class BackupManager:
         if not backup_path.exists():
             logger.error(f"Backup not found: {backup_path}")
             return False
-
+        
+        if destination.exists() and not overwrite:
+            logger.error(f"Destination exists: {destination}")
+            return False
+        
         try:
-            if backup_path.suffix == ".zip":
-                with zipfile.ZipFile(backup_path, "r") as zipf:
+            logger.info(f"Restoring: {backup_path} -> {destination}")
+            
+            if backup_path.suffix == '.zip':
+                with zipfile.ZipFile(backup_path, 'r') as zipf:
                     zipf.extractall(destination)
-            elif ".tar" in backup_path.suffixes:
-                with tarfile.open(backup_path, "r:*") as tar:
+            elif backup_path.suffix in ['.tar', '.gz']:
+                with tarfile.open(backup_path, 'r:*') as tar:
                     tar.extractall(destination)
             else:
-                if backup_path.is_file():
-                    shutil.copy2(backup_path, destination)
-                else:
-                    shutil.copytree(backup_path, destination)
+                logger.error(f"Unknown backup format: {backup_path.suffix}")
+                return False
             
-            logger.info(f"Restored backup to {destination}")
+            logger.info("Restore complete")
             return True
+        
         except Exception as e:
-            logger.error(f"Failed to restore backup: {e}")
+            logger.error(f"Restore failed: {e}")
             return False
 
 
-def main() -> None:
+def main() -> int:
     """CLI for backup manager."""
-    parser = argparse.ArgumentParser(description="Backup management utility")
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    parser = argparse.ArgumentParser(
+        description="Backup management with compression and versioning",
+        epilog="Examples:\n"
+               "  %(prog)s create ./myproject\n"
+               "  %(prog)s create ./myproject --compression tar.gz\n"
+               "  %(prog)s list\n"
+               "  %(prog)s restore backups/myproject_20250101_120000.zip ./restored\n",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
     
     # Create backup
-    create_parser = subparsers.add_parser("create", help="Create backup")
-    create_parser.add_argument("source", help="Source path")
-    create_parser.add_argument("--name", help="Custom backup name")
+    create_parser = subparsers.add_parser("create", help="Create new backup")
+    create_parser.add_argument(
+        "source",
+        help="Source file or directory to backup"
+    )
     create_parser.add_argument(
         "--compression",
-        choices=["zip", "tar", "tar.gz", "none"],
-        default=Config.BACKUP_COMPRESSION
+        "-c",
+        choices=["zip", "tar", "tar.gz"],
+        default=Config.BACKUP_COMPRESSION,
+        help="Compression format (default: zip)"
+    )
+    create_parser.add_argument(
+        "--name",
+        "-n",
+        help="Custom backup name"
+    )
+    create_parser.add_argument(
+        "--keep",
+        "-k",
+        type=int,
+        default=Config.BACKUP_KEEP_VERSIONS,
+        help="Number of versions to keep (default: 5)"
     )
     
     # List backups
-    list_parser = subparsers.add_parser("list", help="List backups")
-    list_parser.add_argument("--name", help="Filter by name")
+    list_parser = subparsers.add_parser("list", help="List available backups")
+    list_parser.add_argument(
+        "--filter",
+        "-f",
+        help="Filter by name"
+    )
     
     # Restore backup
     restore_parser = subparsers.add_parser("restore", help="Restore backup")
-    restore_parser.add_argument("backup", help="Backup file path")
-    restore_parser.add_argument("destination", help="Restore destination")
+    restore_parser.add_argument(
+        "backup",
+        help="Backup file path"
+    )
+    restore_parser.add_argument(
+        "destination",
+        help="Restore destination"
+    )
+    restore_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite existing files"
+    )
+    
+    # Delete backup
+    delete_parser = subparsers.add_parser("delete", help="Delete backup")
+    delete_parser.add_argument(
+        "backup",
+        help="Backup file path to delete"
+    )
+    
+    # Global options
+    parser.add_argument(
+        "--backup-dir",
+        default=Config.BACKUP_DIR,
+        help=f"Backup directory (default: {Config.BACKUP_DIR})"
+    )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Verbose output"
+    )
     
     args = parser.parse_args()
-    manager = BackupManager()
     
+    if not args.command:
+        parser.print_help()
+        return 1
+    
+    if args.verbose:
+        logger.setLevel("DEBUG")
+    
+    manager = BackupManager(
+        backup_dir=Path(args.backup_dir),
+        compression=getattr(args, 'compression', Config.BACKUP_COMPRESSION),
+        keep_versions=getattr(args, 'keep', Config.BACKUP_KEEP_VERSIONS)
+    )
+    
+    # Execute command
     if args.command == "create":
-        manager.compression = args.compression
-        manager.create_backup(Path(args.source), args.name)
+        result = manager.create_backup(
+            Path(args.source),
+            name=args.name
+        )
+        if result:
+            print(f"✅ Backup created: {result}")
+            return 0
+        else:
+            print("❌ Backup failed")
+            return 1
+    
     elif args.command == "list":
-        backups = manager.list_backups(args.name)
-        for backup in backups:
-            print(f"{backup['name']} - {backup['size']} - {backup['created']}")
+        backups = manager.list_backups(args.filter)
+        if backups:
+            print(f"\n💾 Found {len(backups)} backup(s):\n")
+            for backup in backups:
+                size = backup.stat().st_size / (1024 * 1024)  # MB
+                mtime = datetime.fromtimestamp(backup.stat().st_mtime)
+                print(f"  • {backup.name}")
+                print(f"    Size: {size:.2f} MB")
+                print(f"    Date: {mtime.strftime('%Y-%m-%d %H:%M:%S')}")
+                print()
+        else:
+            print("⚠️  No backups found")
+        return 0
+    
     elif args.command == "restore":
-        manager.restore_backup(Path(args.backup), Path(args.destination))
+        success = manager.restore_backup(
+            Path(args.backup),
+            Path(args.destination),
+            overwrite=args.overwrite
+        )
+        if success:
+            print(f"✅ Restored to: {args.destination}")
+            return 0
+        else:
+            print("❌ Restore failed")
+            return 1
+    
+    elif args.command == "delete":
+        backup_path = Path(args.backup)
+        if backup_path.exists():
+            backup_path.unlink()
+            print(f"✅ Deleted: {backup_path}")
+            return 0
+        else:
+            print(f"❌ Backup not found: {backup_path}")
+            return 1
+    
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
