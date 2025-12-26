@@ -9,7 +9,7 @@
 
 ## 🎯 Overview
 
-PyAutokit is a modular Python toolkit designed to automate common development and operations tasks. Each module is standalone, well-documented, tested, and can be used via CLI or programmatically.
+PyAutokit is a modular Python toolkit designed to automate common development and operations tasks. **Each module has a complete CLI** with argparse and can be used programmatically. All modules are standalone, well-documented, and tested.
 
 ## ⚡ Quick Demo
 
@@ -18,149 +18,323 @@ PyAutokit is a modular Python toolkit designed to automate common development an
 git clone https://github.com/Gzeu/pyautokit.git && cd pyautokit
 pip install -r requirements.txt
 
-# Organize your Downloads folder (dry-run)
-python examples/organize_downloads.py --dry-run
+# Organize Downloads (dry-run)
+python -m pyautokit.file_organizer ~/Downloads --dry-run
 
 # Check EGLD price
-python examples/monitor_egld.py
+python -m pyautokit.blockchain_monitor --coin EGLD
+
+# Generate secure password
+python -m pyautokit.security_utils genpass --length 20
 
 # Run tests
 pytest tests/ -v
 ```
 
-## ✨ Features
+## 📚 Complete CLI Reference
 
 ### 📁 File Organizer
-- Organize files by extension, date, category, or size
-- Smart categorization (Documents, Images, Videos, Code, etc.)
-- Dry-run mode for safe testing
-- Auto-watch mode for continuous organization
-- Duplicate handling (rename, skip, overwrite)
-- Comprehensive statistics
-
-### 🌐 Web Scraper
-- Ethical scraping with rate limiting
-- BeautifulSoup4 integration
-- CSS selector support
-- Link extraction and text parsing
-- Session management
-
-### 📧 Email Automation
-- SMTP support (Gmail, custom servers)
-- Template-based personalization
-- Bulk email sending
-- Attachment support
-- HTML and plain text emails
-
-### 💾 Backup Manager
-- Multiple compression formats (ZIP, TAR, TAR.GZ)
-- Version management (keep N backups)
-- Incremental backups
-- Easy restore functionality
-
-### 📊 Log Analyzer
-- Parse common log formats
-- Extract errors, warnings, patterns
-- IP address and email extraction
-- Timestamp analysis
-- Statistical summaries
-
-### 🔗 API Client
-- Generic REST API client
-- Automatic retry with exponential backoff
-- Rate limiting support
-- Bearer token authentication
-- JSON response handling
-
-### 📈 Data Processor
-- CSV ↔ JSON conversion
-- Data filtering and transformation
-- Aggregation (sum, avg, min, max)
-- Deduplication
-- Batch processing
-
-### ⏰ Task Scheduler
-- Cron-like scheduling
-- Interval-based tasks (seconds, minutes, hours, days)
-- Task management (add, remove, list)
-- Manual task execution
-
-### 🔐 Security Utils
-- File encryption/decryption (Fernet)
-- Password-based key derivation (PBKDF2)
-- Secure password generation
-- Hashing utilities (MD5, SHA256, SHA512)
-- Token generation
-
-### ⛓️ Blockchain Monitor
-- Real-time crypto price monitoring
-- Support for EGLD, BTC, ETH, BNB, SOL
-- 24h change tracking
-- Market cap and volume data
-- Trending coins detection
-- Price alerts
-
-## 🚀 Quick Start
-
-### Installation
 
 ```bash
-git clone https://github.com/Gzeu/pyautokit.git
-cd pyautokit
-pip install -r requirements.txt
-```
-
-### Configuration
-
-```bash
-cp .env.example .env
-# Edit .env with your settings
-```
-
-### Basic Usage
-
-#### 📁 Organize Files
-
-```bash
-# Organize Downloads by category
+# Organize by category (Documents, Images, Videos, etc.)
 python -m pyautokit.file_organizer ~/Downloads --method category
 
-# Test first (dry-run)
+# Organize by file extension
+python -m pyautokit.file_organizer ~/Downloads --method extension
+
+# Organize by date (YYYY-MM-DD folders)
+python -m pyautokit.file_organizer ~/Downloads --method date
+
+# Organize by file size
+python -m pyautokit.file_organizer ~/Downloads --method size
+
+# Test without moving files (dry-run)
 python -m pyautokit.file_organizer ~/Downloads --dry-run
 
-# Show statistics
+# Show directory statistics only
 python -m pyautokit.file_organizer ~/Downloads --stats
 
-# Auto-watch for new files (requires watchdog)
-python examples/organize_downloads.py --watch
+# Recursive organization
+python -m pyautokit.file_organizer ~/Downloads --recursive
+
+# Handle duplicates (rename/skip/overwrite)
+python -m pyautokit.file_organizer ~/Downloads --duplicates rename
+
+# Auto-watch mode (continuous organization)
+python examples/organize_downloads.py --watch --interval 30
 ```
 
-#### ⛓️ Monitor Crypto
+### 🌐 Web Scraper
+
+```bash
+# Scrape page with CSS selectors
+python -m pyautokit.web_scraper https://news.ycombinator.com \
+  --selector "title:a.storylink" \
+  --output news.json
+
+# Extract all links from page
+python -m pyautokit.web_scraper https://example.com \
+  --links \
+  --output links.json
+
+# Include external links
+python -m pyautokit.web_scraper https://example.com \
+  --links --external
+
+# Custom rate limiting and timeout
+python -m pyautokit.web_scraper https://example.com \
+  --rate-limit 2.0 \
+  --timeout 30
+
+# Multiple selectors
+python -m pyautokit.web_scraper https://example.com \
+  -s "headlines:h2.title" \
+  -s "authors:.author-name" \
+  -o data.json
+```
+
+### 📧 Email Automation
+
+```bash
+# Send single email
+python -m pyautokit.email_automation \
+  --to user@example.com \
+  --subject "Hello" \
+  --body "Test message"
+
+# Send with attachment
+python -m pyautokit.email_automation \
+  --to user@example.com \
+  --subject "Report" \
+  --body-file report.txt \
+  --attach document.pdf
+
+# Send bulk emails from CSV
+python -m pyautokit.email_automation \
+  --bulk recipients.csv \
+  --subject "Update" \
+  --template email_template.txt
+
+# Send templated emails with personalization
+python -m pyautokit.email_automation \
+  --templated recipients.json \
+  --subject-template "Hi \$name" \
+  --template email_body.txt
+
+# Send HTML email
+python -m pyautokit.email_automation \
+  --to user@example.com \
+  --subject "Newsletter" \
+  --body-file newsletter.html \
+  --html
+
+# Dry-run (test without sending)
+python -m pyautokit.email_automation \
+  --to user@example.com \
+  --subject "Test" \
+  --body "Hello" \
+  --dry-run
+```
+
+### 💾 Backup Manager
+
+```bash
+# Create backup (ZIP format)
+python -m pyautokit.backup_manager create ./myproject
+
+# Create backup with TAR.GZ compression
+python -m pyautokit.backup_manager create ./myproject \
+  --compression tar.gz
+
+# Custom backup name
+python -m pyautokit.backup_manager create ./myproject \
+  --name project_backup_v1.zip
+
+# Keep only 3 versions
+python -m pyautokit.backup_manager create ./myproject \
+  --keep 3
+
+# List all backups
+python -m pyautokit.backup_manager list
+
+# List backups filtered by name
+python -m pyautokit.backup_manager list --filter myproject
+
+# Restore backup
+python -m pyautokit.backup_manager restore \
+  backups/myproject_20250101_120000.zip \
+  ./restored
+
+# Restore with overwrite
+python -m pyautokit.backup_manager restore \
+  backups/myproject.zip \
+  ./restored \
+  --overwrite
+
+# Delete backup
+python -m pyautokit.backup_manager delete backups/old_backup.zip
+```
+
+### 📊 Log Analyzer
+
+```bash
+# Analyze log file
+python -m pyautokit.log_analyzer /var/log/app.log
+
+# Save analysis to JSON
+python -m pyautokit.log_analyzer /var/log/app.log \
+  --output analysis.json
+
+# Extract only errors
+python -m pyautokit.log_analyzer /var/log/app.log \
+  --level ERROR
+
+# Extract IP addresses
+python -m pyautokit.log_analyzer /var/log/access.log \
+  --extract-ips
+
+# Custom pattern search
+python -m pyautokit.log_analyzer /var/log/app.log \
+  --pattern "database error"
+
+# Time range filter
+python -m pyautokit.log_analyzer /var/log/app.log \
+  --start "2025-01-01 00:00:00" \
+  --end "2025-01-31 23:59:59"
+```
+
+### 📈 Data Processor
+
+```bash
+# Convert CSV to JSON
+python -m pyautokit.data_processor convert data.csv --to json
+
+# Convert JSON to CSV
+python -m pyautokit.data_processor convert data.json --to csv
+
+# Convert with custom output
+python -m pyautokit.data_processor convert data.csv \
+  --to json \
+  --output result.json
+
+# Filter data
+python -m pyautokit.data_processor filter data.json \
+  --field status=active \
+  --field role=admin \
+  --output filtered.json
+
+# Aggregate data
+python -m pyautokit.data_processor aggregate data.json \
+  --field price \
+  --operation avg
+
+# Sum aggregation
+python -m pyautokit.data_processor aggregate sales.json \
+  --field total \
+  --operation sum
+
+# Remove duplicates
+python -m pyautokit.data_processor dedupe data.json \
+  --key email \
+  --output unique.json
+
+# Count records
+python -m pyautokit.data_processor aggregate data.json \
+  --field id \
+  --operation count
+```
+
+### 🔐 Security Utils
+
+```bash
+# Generate encryption key
+python -m pyautokit.security_utils genkey
+
+# Encrypt file with password
+python -m pyautokit.security_utils encrypt \
+  file.txt \
+  file.enc \
+  --password mysecretpass
+
+# Decrypt file
+python -m pyautokit.security_utils decrypt \
+  file.enc \
+  file.txt \
+  --password mysecretpass
+
+# Encrypt with key
+python -m pyautokit.security_utils encrypt \
+  file.txt \
+  file.enc \
+  --key "gAAAAABh..."
+
+# Hash file (SHA256)
+python -m pyautokit.security_utils hash file.txt \
+  --file \
+  --algorithm sha256
+
+# Hash text
+python -m pyautokit.security_utils hash "Hello World" \
+  --algorithm sha512
+
+# Generate secure password
+python -m pyautokit.security_utils genpass --length 20
+
+# Generate password (no special chars)
+python -m pyautokit.security_utils genpass \
+  --length 16 \
+  --no-special
+
+# Generate random token
+python -m pyautokit.security_utils token --length 32
+```
+
+### ⛓️ Blockchain Monitor
 
 ```bash
 # Check EGLD price
 python -m pyautokit.blockchain_monitor --coin EGLD
 
-# Continuous monitoring with alerts
-python -m pyautokit.blockchain_monitor --coin EGLD --monitor --alert 5.0
+# Check multiple coins
+python -m pyautokit.blockchain_monitor \
+  --coin EGLD \
+  --coin BTC \
+  --coin ETH
+
+# Monitor continuously (every 5 minutes)
+python -m pyautokit.blockchain_monitor \
+  --coin EGLD \
+  --monitor \
+  --interval 300
+
+# Set price alert (notify when change > 5%)
+python -m pyautokit.blockchain_monitor \
+  --coin EGLD \
+  --monitor \
+  --alert 5.0
+
+# Show trending coins
+python -m pyautokit.blockchain_monitor --trending
+
+# Save to JSON
+python -m pyautokit.blockchain_monitor \
+  --coin EGLD \
+  --output prices.json
 ```
 
-#### 🌐 Scrape Websites
+### 🕹️ Unified CLI
 
 ```bash
-python -m pyautokit.web_scraper https://example.com --selector "title:h1" -o output.json
-```
+# Use unified pyautokit command
+python -m pyautokit file-organizer ~/Downloads --method category
+python -m pyautokit crypto --coin EGLD
+python -m pyautokit backup create ./project
+python -m pyautokit security genpass --length 20
 
-#### 💾 Create Backups
-
-```bash
-python -m pyautokit.backup_manager create ./myproject --compression tar.gz
-```
-
-#### 📊 Analyze Logs
-
-```bash
-python -m pyautokit.log_analyzer /var/log/app.log -o analysis.json
+# Get help for any module
+python -m pyautokit.file_organizer --help
+python -m pyautokit.web_scraper --help
+python -m pyautokit.email_automation --help
 ```
 
 ## 📖 Programmatic Usage
@@ -171,7 +345,6 @@ python -m pyautokit.log_analyzer /var/log/app.log -o analysis.json
 from pathlib import Path
 from pyautokit.file_organizer import FileOrganizer
 
-# Create organizer
 organizer = FileOrganizer(
     create_folders=True,
     dry_run=False,
@@ -180,12 +353,11 @@ organizer = FileOrganizer(
 
 # Organize by category
 results = organizer.organize_by_category(Path("~/Downloads"))
-print(f"Organized {sum(results.values())} files into {len(results)} categories")
+print(f"Organized into {len(results)} categories")
 
 # Get statistics
 stats = organizer.get_directory_stats(Path("~/Downloads"))
-print(f"Total files: {stats['total_files']}")
-print(f"Total size: {stats['total_size']}")
+print(f"Total: {stats['total_files']} files, {stats['total_size']} bytes")
 ```
 
 ### Web Scraping
@@ -194,7 +366,7 @@ print(f"Total size: {stats['total_size']}")
 from pyautokit.web_scraper import WebScraper
 
 scraper = WebScraper(rate_limit=1.0)
-selectors = {"headlines": "h2.title", "links": "a.story-link"}
+selectors = {"headlines": "h2.title", "links": "a.story"}
 data = scraper.scrape_page("https://news.ycombinator.com", selectors)
 ```
 
@@ -205,42 +377,92 @@ from pyautokit.email_automation import EmailClient
 
 client = EmailClient()
 recipients = [
-    {"email": "user@example.com", "name": "Alice", "project": "Web"}
+    {"email": "alice@example.com", "name": "Alice", "project": "Web"},
+    {"email": "bob@example.com", "name": "Bob", "project": "API"}
 ]
+
 results = client.send_templated_emails(
     recipients,
-    subject_template="Update on $project",
-    body_template="Hi $name, your $project is ready!"
+    subject_template="Update on \$project",
+    body_template="Hi \$name, your \$project is ready!"
 )
-print(f"Sent: {results['success']}, Failed: {results['failed']}")
+print(f"✅ {results['success']}, ❌ {results['failed']}")
 ```
 
-### Blockchain Monitoring
+### Backup Management
+
+```python
+from pathlib import Path
+from pyautokit.backup_manager import BackupManager
+
+manager = BackupManager(compression="tar.gz", keep_versions=5)
+backup_path = manager.create_backup(Path("./myproject"))
+print(f"Backup created: {backup_path}")
+
+# Restore
+manager.restore_backup(backup_path, Path("./restored"))
+```
+
+### Data Processing
+
+```python
+from pathlib import Path
+from pyautokit.data_processor import DataProcessor
+
+processor = DataProcessor()
+
+# Convert
+data = processor.csv_to_json(Path("data.csv"))
+
+# Filter
+filtered = processor.filter_data(data, {"status": "active"})
+
+# Aggregate
+avg_price = processor.aggregate(data, "price", "avg")
+print(f"Average price: ${avg_price:.2f}")
+```
+
+### Security Utils
+
+```python
+from pathlib import Path
+from pyautokit.security_utils import SecurityUtils
+
+utils = SecurityUtils()
+
+# Generate password
+password = utils.generate_password(length=20, use_special=True)
+print(f"Generated: {password}")
+
+# Encrypt file
+key, salt = utils.derive_key("mysecretpassword")
+utils.encrypt_file(Path("file.txt"), Path("file.enc"), key)
+
+# Hash
+file_hash = utils.hash_file(Path("file.txt"), "sha256")
+print(f"SHA256: {file_hash}")
+```
+
+### Blockchain Monitor
 
 ```python
 from pyautokit.blockchain_monitor import BlockchainMonitor
 
 monitor = BlockchainMonitor()
+
+# Single coin
 price_data = monitor.get_price("EGLD")
 print(f"EGLD: ${price_data['price']} ({price_data['change_24h']:.2f}%)")
 
-# Monitor multiple coins
-prices = monitor.get_multiple_prices(["EGLD", "BTC", "ETH"])
+# Multiple coins
+prices = monitor.get_multiple_prices(["EGLD", "BTC", "ETH", "BNB"])
 for p in prices:
-    print(f"{p['coin']}: ${p['price']:,.2f}")
-```
+    print(f"{p['coin']:5} ${p['price']:>10,.2f} {p['change_24h']:+.2f}%")
 
-### Task Scheduling
-
-```python
-from pyautokit.task_scheduler import TaskScheduler
-
-def backup_task():
-    print("Running backup...")
-
-scheduler = TaskScheduler()
-scheduler.add_task("daily_backup", backup_task, "1", "days")
-scheduler.run_forever()  # Runs in background
+# Trending
+trending = monitor.get_trending_coins()
+for coin in trending[:5]:
+    print(f"{coin['rank']}. {coin['name']} - {coin['symbol']}")
 ```
 
 ## 📚 Examples
@@ -249,242 +471,119 @@ Complete working examples in `examples/` directory:
 
 | Example | Description | Command |
 |---------|-------------|----------|
-| **organize_downloads.py** | Organize Downloads folder | `python examples/organize_downloads.py` |
-| **scrape_news.py** | Scrape news headlines | `python examples/scrape_news.py` |
-| **send_bulk_emails.py** | Send personalized emails | `python examples/send_bulk_emails.py` |
-| **backup_project.py** | Create project backups | `python examples/backup_project.py` |
-| **analyze_logs.py** | Analyze log files | `python examples/analyze_logs.py` |
-| **monitor_egld.py** | Monitor crypto prices | `python examples/monitor_egld.py` |
+| **organize_downloads.py** | Organize Downloads with auto-watch | `python examples/organize_downloads.py --watch` |
+| **scrape_news.py** | Scrape Hacker News headlines | `python examples/scrape_news.py` |
+| **send_bulk_emails.py** | Send personalized bulk emails | `python examples/send_bulk_emails.py` |
+| **backup_project.py** | Create versioned project backups | `python examples/backup_project.py` |
+| **analyze_logs.py** | Analyze log files for patterns | `python examples/analyze_logs.py` |
+| **monitor_egld.py** | Monitor EGLD and crypto prices | `python examples/monitor_egld.py` |
 
 See [examples/README.md](examples/README.md) for detailed documentation.
 
 ## 🧪 Testing
 
-PyAutokit comes with comprehensive test coverage for all modules.
-
-### Run All Tests
-
 ```bash
-# Basic test run
+# Run all tests
 pytest
 
 # Verbose output
 pytest -v
 
-# With coverage report
+# With coverage
 pytest --cov=pyautokit --cov-report=html
+
+# Test specific module
+pytest tests/test_file_organizer.py
 
 # Open coverage report
 open htmlcov/index.html
 ```
 
-### Run Specific Tests
-
-```bash
-# Test specific module
-pytest tests/test_file_organizer.py
-
-# Test specific function
-pytest tests/test_file_organizer.py::TestFileOrganizer::test_categorize_file
-
-# Run only fast tests (skip slow/integration)
-pytest -m "not slow"
-```
-
-### Test Coverage
-
-Current test coverage:
-- **file_organizer.py**: 95%+ coverage
-- **Core modules**: Tests in progress
-- **Integration tests**: Coming soon
-
-### Writing Tests
+**Current Coverage**: file_organizer.py = 95%+
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for testing guidelines.
-
-```python
-import pytest
-from pyautokit.file_organizer import FileOrganizer
-
-def test_organize_by_category(tmp_path):
-    """Test file organization."""
-    # Create test files
-    (tmp_path / "test.pdf").write_text("content")
-    (tmp_path / "image.jpg").write_text("content")
-    
-    # Organize
-    organizer = FileOrganizer()
-    results = organizer.organize_by_category(tmp_path)
-    
-    # Assert
-    assert "Documents" in results
-    assert "Images" in results
-    assert (tmp_path / "Documents" / "test.pdf").exists()
-```
 
 ## 📝 Project Structure
 
 ```
 pyautokit/
 ├── pyautokit/              # Main package
-│   ├── __init__.py         # Package initialization
-│   ├── config.py           # Configuration management
-│   ├── logger.py           # Logging utilities
+│   ├── __init__.py         # Package init
+│   ├── __main__.py         # ✅ Unified CLI entry point
+│   ├── config.py           # Configuration
+│   ├── logger.py           # Logging
 │   ├── utils.py            # Common utilities
-│   ├── file_organizer.py   # File organization ✅ TESTED
-│   ├── web_scraper.py      # Web scraping
-│   ├── email_automation.py # Email automation
-│   ├── backup_manager.py   # Backup management
-│   ├── log_analyzer.py     # Log analysis
-│   ├── api_client.py       # API client
-│   ├── data_processor.py   # Data processing
-│   ├── task_scheduler.py   # Task scheduling
-│   ├── security_utils.py   # Security utilities
-│   └── blockchain_monitor.py # Blockchain monitoring
-├── examples/               # Usage examples
-│   ├── README.md           # Examples documentation
-│   ├── organize_downloads.py
-│   ├── scrape_news.py
-│   ├── send_bulk_emails.py
-│   ├── backup_project.py
-│   ├── analyze_logs.py
-│   └── monitor_egld.py
+│   ├── file_organizer.py   # ✅ CLI + 95% test coverage
+│   ├── web_scraper.py      # ✅ Complete CLI
+│   ├── email_automation.py # ✅ Complete CLI
+│   ├── backup_manager.py   # ✅ Complete CLI
+│   ├── log_analyzer.py     # ✅ Complete CLI
+│   ├── api_client.py       # ✅ Complete CLI
+│   ├── data_processor.py   # ✅ Complete CLI
+│   ├── task_scheduler.py   # ✅ Complete CLI
+│   ├── security_utils.py   # ✅ Complete CLI
+│   └── blockchain_monitor.py # ✅ Complete CLI
+├── examples/               # Working examples
 ├── tests/                  # Test suite
-│   ├── __init__.py
-│   ├── conftest.py         # Pytest configuration
-│   └── test_file_organizer.py  # ✅ 95%+ coverage
 ├── .github/                # GitHub templates
-│   └── ISSUE_TEMPLATE/
-├── .env.example            # Environment template
-├── .gitignore              # Git ignore rules
-├── pytest.ini              # Pytest configuration
-├── requirements.txt        # Dependencies
-├── CONTRIBUTING.md         # Contribution guide
-└── README.md               # This file
+├── CONTRIBUTING.md         # ✅ Complete guide
+├── requirements.txt        # ✅ All dependencies
+└── README.md               # ✅ Complete CLI reference
 ```
 
-## 🔧 Configuration
-
-### Environment Variables (.env)
+## 🔧 Configuration (.env)
 
 ```bash
 # Logging
 LOG_LEVEL=INFO
 
-# File Organizer
-FILE_ORG_SORT_BY=extension
-FILE_ORG_CREATE_FOLDERS=true
-
-# Web Scraper
-SCRAPER_TIMEOUT=10
-SCRAPER_RATE_LIMIT=1.0
-
 # Email (Gmail example)
 EMAIL_SMTP_SERVER=smtp.gmail.com
 EMAIL_SMTP_PORT=587
 EMAIL_SENDER=your-email@gmail.com
-EMAIL_PASSWORD=your-app-password  # Get from Google Account settings
-
-# API Client
-API_BASE_URL=https://api.example.com
-API_KEY=your-api-key
+EMAIL_PASSWORD=your-app-password
 
 # Blockchain
-BLOCKCHAIN_MONITOR_INTERVAL=300  # 5 minutes
+BLOCKCHAIN_MONITOR_INTERVAL=300
 
 # Backup
 BACKUP_COMPRESSION=zip
 BACKUP_KEEP_VERSIONS=5
+
+# Web Scraper
+SCRAPER_RATE_LIMIT=1.0
+SCRAPER_TIMEOUT=10
 ```
-
-## 🛑 Development
-
-### Setup Development Environment
-
-```bash
-# Clone repository
-git clone https://github.com/Gzeu/pyautokit.git
-cd pyautokit
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run tests
-pytest
-```
-
-### Code Quality
-
-```bash
-# Format code
-black pyautokit/ tests/
-
-# Lint
-flake8 pyautokit/ tests/
-
-# Type checking
-mypy pyautokit/
-```
-
-### Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for:
-- Code style guidelines
-- Testing requirements
-- Pull request process
-- Development workflow
 
 ## 🤝 Contributing
 
-Contributions are welcome! Here's how:
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
+1. Fork repository
+2. Create feature branch (`git checkout -b feature/amazing`)
 3. Commit changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
+4. Push branch (`git push origin feature/amazing`)
 5. Open Pull Request
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## 📝 License
 
-MIT License - see [LICENSE](LICENSE) for details.
-
-Free to use in personal and commercial projects.
+MIT License - Free to use in personal and commercial projects.
 
 ## 👤 Author
 
 **George Pricop**
 - Blockchain Developer & AI Automation Specialist
-- Building on MultiversX (EGLD) ecosystem
 - GitHub: [@Gzeu](https://github.com/Gzeu)
+- Building on MultiversX (EGLD) ecosystem
 - Location: București, Romania
-
-## 🙏 Acknowledgments
-
-- Built with Python 3.9+
-- Uses BeautifulSoup4 for web scraping
-- CoinGecko API for crypto prices
-- Cryptography library for security
-- Watchdog for file monitoring
-- Schedule for task automation
 
 ## 🔗 Links
 
 - **Repository**: [github.com/Gzeu/pyautokit](https://github.com/Gzeu/pyautokit)
 - **Issues**: [Report bugs](https://github.com/Gzeu/pyautokit/issues)
-- **Pull Requests**: [Contribute](https://github.com/Gzeu/pyautokit/pulls)
 - **Examples**: [Working examples](examples/)
 - **Tests**: [Test coverage](tests/)
 
-## ⭐ Star History
-
-If you find PyAutokit useful, please star the repository!
-
 ---
 
-**Built with ❤️ for automation enthusiasts**
+**Built with ❤️ for automation enthusiasts. Every module has a complete CLI! 🚀**
