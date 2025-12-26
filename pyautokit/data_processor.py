@@ -1,10 +1,19 @@
-"""Data transformation and processing utilities."""
+"""Data processing and transformation utilities.
+
+Features:
+- CSV <-> JSON conversion
+- Data filtering and transformation
+- Aggregation functions
+- Deduplication
+- Batch processing
+"""
 
 import argparse
+import sys
 import csv
 import json
 from pathlib import Path
-from typing import List, Dict, Any, Callable, Optional
+from typing import List, Dict, Any, Optional, Callable
 from .logger import setup_logger
 from .config import Config
 from .utils import load_json, save_json
@@ -13,269 +22,327 @@ logger = setup_logger("DataProcessor", level=Config.LOG_LEVEL)
 
 
 class DataProcessor:
-    """Process and transform data from various formats."""
+    """Data processing and transformation."""
 
-    def __init__(self):
-        """Initialize data processor."""
-        pass
-
-    def load_csv(
-        self,
-        file_path: Path,
-        delimiter: str = ",",
-        encoding: str = "utf-8"
-    ) -> List[Dict[str, str]]:
-        """Load CSV file to list of dicts.
+    @staticmethod
+    def csv_to_json(csv_path: Path, output_path: Optional[Path] = None) -> List[Dict]:
+        """Convert CSV to JSON.
         
         Args:
-            file_path: Path to CSV file
-            delimiter: CSV delimiter
-            encoding: File encoding
+            csv_path: Input CSV file path
+            output_path: Optional output JSON path
             
         Returns:
-            List of row dicts
+            List of dictionaries
         """
-        data = []
-        try:
-            with open(file_path, "r", encoding=encoding, newline="") as f:
-                reader = csv.DictReader(f, delimiter=delimiter)
-                data = list(reader)
-            logger.info(f"Loaded {len(data)} rows from {file_path}")
-        except Exception as e:
-            logger.error(f"Failed to load CSV: {e}")
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            data = list(reader)
+        
+        if output_path:
+            save_json(data, output_path)
+            logger.info(f"Converted {csv_path} -> {output_path}")
+        
         return data
 
-    def save_csv(
-        self,
-        data: List[Dict[str, Any]],
-        file_path: Path,
-        delimiter: str = ",",
-        encoding: str = "utf-8"
-    ) -> bool:
-        """Save data to CSV file.
+    @staticmethod
+    def json_to_csv(json_path: Path, output_path: Optional[Path] = None) -> None:
+        """Convert JSON to CSV.
         
         Args:
-            data: List of row dicts
-            file_path: Output file path
-            delimiter: CSV delimiter
-            encoding: File encoding
-            
-        Returns:
-            True if successful
+            json_path: Input JSON file path
+            output_path: Output CSV path
         """
-        if not data:
-            logger.warning("No data to save")
-            return False
+        data = load_json(json_path)
         
-        try:
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(file_path, "w", encoding=encoding, newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=data[0].keys(), delimiter=delimiter)
-                writer.writeheader()
+        if not data:
+            logger.error("No data to convert")
+            return
+        
+        if not output_path:
+            output_path = json_path.with_suffix('.csv')
+        
+        keys = data[0].keys() if isinstance(data, list) else data.keys()
+        
+        with open(output_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=keys)
+            writer.writeheader()
+            if isinstance(data, list):
                 writer.writerows(data)
-            logger.info(f"Saved {len(data)} rows to {file_path}")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to save CSV: {e}")
-            return False
+            else:
+                writer.writerow(data)
+        
+        logger.info(f"Converted {json_path} -> {output_path}")
 
+    @staticmethod
     def filter_data(
-        self,
         data: List[Dict],
-        condition: Callable[[Dict], bool]
+        filters: Dict[str, Any]
     ) -> List[Dict]:
-        """Filter data based on condition.
+        """Filter data by criteria.
         
         Args:
-            data: Input data
-            condition: Filter function
+            data: List of dictionaries
+            filters: Dict of {field: value} filters
             
         Returns:
             Filtered data
         """
-        filtered = [row for row in data if condition(row)]
-        logger.info(f"Filtered {len(data)} rows to {len(filtered)} rows")
+        filtered = []
+        for item in data:
+            match = True
+            for key, value in filters.items():
+                if key not in item or item[key] != value:
+                    match = False
+                    break
+            if match:
+                filtered.append(item)
+        
+        logger.info(f"Filtered {len(data)} -> {len(filtered)} items")
         return filtered
 
-    def transform_data(
-        self,
+    @staticmethod
+    def aggregate(
         data: List[Dict],
-        transformer: Callable[[Dict], Dict]
-    ) -> List[Dict]:
-        """Transform data with function.
+        field: str,
+        operation: str = "sum"
+    ) -> float:
+        """Aggregate numeric field.
         
         Args:
-            data: Input data
-            transformer: Transform function
+            data: List of dictionaries
+            field: Field to aggregate
+            operation: Operation (sum, avg, min, max, count)
             
         Returns:
-            Transformed data
+            Aggregated value
         """
-        transformed = [transformer(row) for row in data]
-        logger.info(f"Transformed {len(data)} rows")
-        return transformed
+        values = [float(item[field]) for item in data if field in item]
+        
+        if not values:
+            return 0.0
+        
+        if operation == "sum":
+            return sum(values)
+        elif operation == "avg":
+            return sum(values) / len(values)
+        elif operation == "min":
+            return min(values)
+        elif operation == "max":
+            return max(values)
+        elif operation == "count":
+            return len(values)
+        else:
+            logger.warning(f"Unknown operation: {operation}")
+            return 0.0
 
-    def aggregate_data(
-        self,
-        data: List[Dict],
-        group_by: str,
-        agg_fields: Dict[str, str]
-    ) -> List[Dict]:
-        """Aggregate data by field.
-        
-        Args:
-            data: Input data
-            group_by: Field to group by
-            agg_fields: Dict of {field: operation} (sum, count, avg, min, max)
-            
-        Returns:
-            Aggregated data
-        """
-        from collections import defaultdict
-        
-        groups = defaultdict(lambda: defaultdict(list))
-        
-        for row in data:
-            key = row.get(group_by)
-            if key is None:
-                continue
-            
-            for field in agg_fields.keys():
-                if field in row:
-                    try:
-                        groups[key][field].append(float(row[field]))
-                    except ValueError:
-                        continue
-        
-        results = []
-        for key, fields in groups.items():
-            result = {group_by: key}
-            
-            for field, operation in agg_fields.items():
-                values = fields.get(field, [])
-                if not values:
-                    continue
-                
-                if operation == "sum":
-                    result[f"{field}_sum"] = sum(values)
-                elif operation == "count":
-                    result[f"{field}_count"] = len(values)
-                elif operation == "avg":
-                    result[f"{field}_avg"] = sum(values) / len(values)
-                elif operation == "min":
-                    result[f"{field}_min"] = min(values)
-                elif operation == "max":
-                    result[f"{field}_max"] = max(values)
-            
-            results.append(result)
-        
-        logger.info(f"Aggregated into {len(results)} groups")
-        return results
-
-    def convert_csv_to_json(
-        self,
-        csv_path: Path,
-        json_path: Path
-    ) -> bool:
-        """Convert CSV to JSON.
-        
-        Args:
-            csv_path: Input CSV path
-            json_path: Output JSON path
-            
-        Returns:
-            True if successful
-        """
-        data = self.load_csv(csv_path)
-        if data:
-            save_json(data, json_path)
-            return True
-        return False
-
-    def convert_json_to_csv(
-        self,
-        json_path: Path,
-        csv_path: Path
-    ) -> bool:
-        """Convert JSON to CSV.
-        
-        Args:
-            json_path: Input JSON path
-            csv_path: Output CSV path
-            
-        Returns:
-            True if successful
-        """
-        data = load_json(json_path)
-        if isinstance(data, list) and data:
-            return self.save_csv(data, csv_path)
-        logger.error("JSON data must be a non-empty list of dicts")
-        return False
-
+    @staticmethod
     def deduplicate(
-        self,
         data: List[Dict],
-        key_fields: List[str]
+        key: Optional[str] = None
     ) -> List[Dict]:
-        """Remove duplicate rows based on key fields.
+        """Remove duplicates.
         
         Args:
-            data: Input data
-            key_fields: Fields to use for uniqueness
+            data: List of dictionaries
+            key: Optional key field for deduplication
             
         Returns:
             Deduplicated data
         """
-        seen = set()
-        unique = []
+        if key:
+            seen = set()
+            unique = []
+            for item in data:
+                if key in item:
+                    value = item[key]
+                    if value not in seen:
+                        seen.add(value)
+                        unique.append(item)
+            logger.info(f"Deduplicated by {key}: {len(data)} -> {len(unique)}")
+            return unique
+        else:
+            # Deduplicate by entire dict
+            unique = [dict(t) for t in {tuple(d.items()) for d in data}]
+            logger.info(f"Deduplicated: {len(data)} -> {len(unique)}")
+            return unique
+
+    @staticmethod
+    def transform(
+        data: List[Dict],
+        transformations: Dict[str, Callable]
+    ) -> List[Dict]:
+        """Transform data fields.
         
-        for row in data:
-            key = tuple(row.get(field) for field in key_fields)
-            if key not in seen:
-                seen.add(key)
-                unique.append(row)
+        Args:
+            data: List of dictionaries
+            transformations: Dict of {field: transform_function}
+            
+        Returns:
+            Transformed data
+        """
+        transformed = []
+        for item in data:
+            new_item = item.copy()
+            for field, func in transformations.items():
+                if field in new_item:
+                    try:
+                        new_item[field] = func(new_item[field])
+                    except Exception as e:
+                        logger.warning(f"Transform failed for {field}: {e}")
+            transformed.append(new_item)
         
-        logger.info(f"Removed {len(data) - len(unique)} duplicates")
-        return unique
+        return transformed
 
 
-def main() -> None:
+def main() -> int:
     """CLI for data processor."""
-    parser = argparse.ArgumentParser(description="Data processing utility")
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    parser = argparse.ArgumentParser(
+        description="Data processing and transformation utilities",
+        epilog="Examples:\n"
+               "  %(prog)s convert data.csv --to json\n"
+               "  %(prog)s convert data.json --to csv\n"
+               "  %(prog)s filter data.json --field status=active\n"
+               "  %(prog)s aggregate data.json --field price --operation avg\n"
+               "  %(prog)s dedupe data.json --key email\n",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     
-    # Convert CSV to JSON
-    csv2json = subparsers.add_parser("csv2json", help="Convert CSV to JSON")
-    csv2json.add_argument("input", help="Input CSV file")
-    csv2json.add_argument("output", help="Output JSON file")
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
     
-    # Convert JSON to CSV
-    json2csv = subparsers.add_parser("json2csv", help="Convert JSON to CSV")
-    json2csv.add_argument("input", help="Input JSON file")
-    json2csv.add_argument("output", help="Output CSV file")
+    # Convert command
+    convert_parser = subparsers.add_parser("convert", help="Convert between formats")
+    convert_parser.add_argument("input", help="Input file path")
+    convert_parser.add_argument(
+        "--to",
+        choices=["json", "csv"],
+        required=True,
+        help="Output format"
+    )
+    convert_parser.add_argument(
+        "--output",
+        "-o",
+        help="Output file path (auto-generated if not provided)"
+    )
     
-    # Filter data
-    filter_parser = subparsers.add_parser("filter", help="Filter CSV data")
-    filter_parser.add_argument("input", help="Input CSV file")
-    filter_parser.add_argument("output", help="Output CSV file")
-    filter_parser.add_argument("--field", required=True, help="Field to filter")
-    filter_parser.add_argument("--value", required=True, help="Value to match")
+    # Filter command
+    filter_parser = subparsers.add_parser("filter", help="Filter data")
+    filter_parser.add_argument("input", help="Input JSON file")
+    filter_parser.add_argument(
+        "--field",
+        "-f",
+        action="append",
+        help="Filter field=value (can specify multiple)"
+    )
+    filter_parser.add_argument(
+        "--output",
+        "-o",
+        help="Output file path"
+    )
+    
+    # Aggregate command
+    agg_parser = subparsers.add_parser("aggregate", help="Aggregate data")
+    agg_parser.add_argument("input", help="Input JSON file")
+    agg_parser.add_argument(
+        "--field",
+        required=True,
+        help="Field to aggregate"
+    )
+    agg_parser.add_argument(
+        "--operation",
+        choices=["sum", "avg", "min", "max", "count"],
+        default="sum",
+        help="Aggregation operation"
+    )
+    
+    # Deduplicate command
+    dedupe_parser = subparsers.add_parser("dedupe", help="Remove duplicates")
+    dedupe_parser.add_argument("input", help="Input JSON file")
+    dedupe_parser.add_argument(
+        "--key",
+        help="Key field for deduplication"
+    )
+    dedupe_parser.add_argument(
+        "--output",
+        "-o",
+        help="Output file path"
+    )
+    
+    # Global options
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Verbose output"
+    )
     
     args = parser.parse_args()
+    
+    if not args.command:
+        parser.print_help()
+        return 1
+    
+    if args.verbose:
+        logger.setLevel("DEBUG")
+    
     processor = DataProcessor()
     
-    if args.command == "csv2json":
-        processor.convert_csv_to_json(Path(args.input), Path(args.output))
-    elif args.command == "json2csv":
-        processor.convert_json_to_csv(Path(args.input), Path(args.output))
+    # Execute command
+    if args.command == "convert":
+        input_path = Path(args.input)
+        output_path = Path(args.output) if args.output else None
+        
+        if args.to == "json":
+            data = processor.csv_to_json(input_path, output_path)
+            if not output_path:
+                print(json.dumps(data, indent=2))
+        else:  # csv
+            processor.json_to_csv(input_path, output_path)
+        
+        print(f"✅ Converted {input_path} to {args.to}")
+        return 0
+    
     elif args.command == "filter":
-        data = processor.load_csv(Path(args.input))
-        filtered = processor.filter_data(
-            data,
-            lambda row: row.get(args.field) == args.value
-        )
-        processor.save_csv(filtered, Path(args.output))
+        data = load_json(Path(args.input))
+        
+        # Parse filters
+        filters = {}
+        if args.field:
+            for f in args.field:
+                if "=" in f:
+                    key, value = f.split("=", 1)
+                    filters[key] = value
+        
+        filtered = processor.filter_data(data, filters)
+        
+        if args.output:
+            save_json(filtered, Path(args.output))
+            print(f"✅ Filtered data saved to {args.output}")
+        else:
+            print(json.dumps(filtered, indent=2))
+        
+        return 0
+    
+    elif args.command == "aggregate":
+        data = load_json(Path(args.input))
+        result = processor.aggregate(data, args.field, args.operation)
+        print(f"{args.operation}({args.field}) = {result}")
+        return 0
+    
+    elif args.command == "dedupe":
+        data = load_json(Path(args.input))
+        unique = processor.deduplicate(data, args.key)
+        
+        if args.output:
+            save_json(unique, Path(args.output))
+            print(f"✅ Deduplicated data saved to {args.output}")
+        else:
+            print(json.dumps(unique, indent=2))
+        
+        return 0
+    
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
