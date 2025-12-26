@@ -1,7 +1,16 @@
-"""Ethical web scraping utility with rate limiting."""
+"""Ethical web scraping utility with rate limiting.
+
+Features:
+- Rate limiting to be respectful
+- CSS selector support
+- Session management
+- Link extraction
+- Multiple page scraping
+"""
 
 import argparse
 import time
+import sys
 from typing import List, Dict, Optional
 from urllib.parse import urljoin, urlparse
 import requests
@@ -188,29 +197,72 @@ class WebScraper:
         return results
 
 
-def main() -> None:
+def main() -> int:
     """CLI for web scraper."""
-    parser = argparse.ArgumentParser(description="Web scraping utility")
-    parser.add_argument("url", help="URL to scrape")
+    parser = argparse.ArgumentParser(
+        description="Web scraping utility with rate limiting",
+        epilog="Examples:\n"
+               "  %(prog)s https://example.com\n"
+               "  %(prog)s https://news.ycombinator.com -s 'title:a.storylink'\n"
+               "  %(prog)s https://example.com --links --output links.json\n",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    
+    parser.add_argument(
+        "url",
+        help="URL to scrape"
+    )
+    
     parser.add_argument(
         "--output",
         "-o",
         help="Output JSON file path"
     )
+    
     parser.add_argument(
         "--selector",
         "-s",
         action="append",
         help="CSS selector (format: field:selector)"
     )
+    
+    parser.add_argument(
+        "--links",
+        action="store_true",
+        help="Extract all links from page"
+    )
+    
+    parser.add_argument(
+        "--external",
+        action="store_true",
+        help="Include external links"
+    )
+    
     parser.add_argument(
         "--rate-limit",
         type=float,
         default=Config.SCRAPER_RATE_LIMIT,
-        help="Rate limit in seconds"
+        help="Rate limit in seconds (default: 1.0)"
+    )
+    
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=Config.SCRAPER_TIMEOUT,
+        help="Request timeout in seconds (default: 10)"
+    )
+    
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Verbose output"
     )
     
     args = parser.parse_args()
+    
+    if args.verbose:
+        logger.setLevel("DEBUG")
     
     selectors = None
     if args.selector:
@@ -219,16 +271,37 @@ def main() -> None:
             if ":" in s:
                 field, selector = s.split(":", 1)
                 selectors[field] = selector
+            else:
+                logger.warning(f"Invalid selector format: {s} (use field:selector)")
     
-    scraper = WebScraper(rate_limit=args.rate_limit)
+    scraper = WebScraper(
+        rate_limit=args.rate_limit,
+        timeout=args.timeout
+    )
+    
+    logger.info(f"Scraping {args.url}")
     data = scraper.scrape_page(args.url, selectors)
     
+    if not data:
+        logger.error("Failed to scrape page")
+        return 1
+    
+    # Extract links if requested
+    if args.links:
+        soup = scraper.parse_html(requests.get(args.url).text)
+        data["all_links"] = scraper.extract_links(soup, args.url, args.external)
+        logger.info(f"Extracted {len(data['all_links'])} links")
+    
     if args.output:
-        save_json(data, Config.DATA_DIR / args.output)
-        logger.info(f"Saved to {args.output}")
+        output_path = Config.DATA_DIR / args.output
+        save_json(data, output_path)
+        logger.info(f"Saved to {output_path}")
     else:
-        print(data)
+        import json
+        print(json.dumps(data, indent=2))
+    
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
