@@ -63,6 +63,9 @@ setup(
         "security",
         "data-processing",
         "productivity",
+        "playwright",
+        "browser-automation",
+        "testing",
     ],
     python_requires=">=3.9",
     install_requires=requirements,
@@ -70,6 +73,7 @@ setup(
         "dev": [
             "pytest>=7.4.0",
             "pytest-cov>=4.1.0",
+            "pytest-asyncio>=0.21.0",
             "black>=23.0.0",
             "flake8>=6.0.0",
             "mypy>=1.5.0",
@@ -77,13 +81,19 @@ setup(
         "watch": [
             "watchdog>=3.0.0",
         ],
+        "browser": [
+            "playwright>=1.40.0",
+            "pytest-asyncio>=0.21.0",
+        ],
         "all": [
             "pytest>=7.4.0",
             "pytest-cov>=4.1.0",
+            "pytest-asyncio>=0.21.0",
             "black>=23.0.0",
             "flake8>=6.0.0",
             "mypy>=1.5.0",
             "watchdog>=3.0.0",
+            "playwright>=1.40.0",
         ],
     },
     entry_points={
@@ -97,6 +107,8 @@ setup(
             "pyautokit-data=pyautokit.data_processor:main",
             "pyautokit-security=pyautokit.security_utils:main",
             "pyautokit-crypto=pyautokit.blockchain_monitor:main",
+            "pyautokit-github=pyautokit.github_utils:main",
+            "pyautokit-browser=pyautokit.playwright_utils:main",
         ],
     },
     include_package_data=True,
