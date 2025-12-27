@@ -37,6 +37,12 @@ keywords = [
     "blockchain",
     "crypto",
     "security",
+    "data-processing",
+    "productivity",
+    "playwright",
+    "browser-automation",
+    "testing",
+    "github",
 ]
 dependencies = [
     "python-dotenv>=1.0.0",
@@ -51,6 +57,7 @@ dependencies = [
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.0",
     "black>=23.0.0",
     "flake8>=6.0.0",
     "mypy>=1.5.0",
@@ -58,13 +65,19 @@ dev = [
 watch = [
     "watchdog>=3.0.0",
 ]
+browser = [
+    "playwright>=1.40.0",
+    "pytest-asyncio>=0.21.0",
+]
 all = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.0",
     "black>=23.0.0",
     "flake8>=6.0.0",
     "mypy>=1.5.0",
     "watchdog>=3.0.0",
+    "playwright>=1.40.0",
 ]
 
 [project.urls]
@@ -84,6 +97,8 @@ pyautokit-logs = "pyautokit.log_analyzer:main"
 pyautokit-data = "pyautokit.data_processor:main"
 pyautokit-security = "pyautokit.security_utils:main"
 pyautokit-crypto = "pyautokit.blockchain_monitor:main"
+pyautokit-github = "pyautokit.github_utils:main"
+pyautokit-browser = "pyautokit.playwright_utils:main"
 
 [tool.setuptools]
 packages = ["pyautokit"]
@@ -119,7 +134,9 @@ addopts = "-v --strict-markers --tb=short"
 markers = [
     "slow: marks tests as slow",
     "integration: marks tests as integration tests",
+    "asyncio: marks tests as async tests",
 ]
+asyncio_mode = "auto"
 
 [tool.mypy]
 python_version = "3.9"
