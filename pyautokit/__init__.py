@@ -14,21 +14,36 @@ Modules:
     - task_scheduler: Cron-like task scheduling
     - security_utils: Encryption, hashing, and password generation
     - blockchain_monitor: Cryptocurrency price monitoring
+    - github_utils: GitHub repository and issue management
+    - playwright_utils: Browser automation with Playwright
 
 Examples:
-    >>> from pyautokit.file_organizer import FileOrganizer
+    >>> from pyautokit import FileOrganizer
     >>> organizer = FileOrganizer()
     >>> results = organizer.organize_by_category("/path/to/folder")
     
-    >>> from pyautokit.blockchain_monitor import BlockchainMonitor
+    >>> from pyautokit import BlockchainMonitor
     >>> monitor = BlockchainMonitor()
     >>> price = monitor.get_price("EGLD")
+    
+    >>> from pyautokit import GitHubUtils
+    >>> gh = GitHubUtils(token="ghp_...")
+    >>> repos = gh.list_repositories()
+    
+    >>> import asyncio
+    >>> from pyautokit import PlaywrightUtils
+    >>> async def capture():
+    ...     async with PlaywrightUtils() as pw:
+    ...         await pw.screenshot("https://example.com", "page.png")
+    >>> asyncio.run(capture())
 
 CLI Usage:
-    $ python -m pyautokit.file_organizer ~/Downloads --method category
-    $ python -m pyautokit.blockchain_monitor --coin EGLD
-    $ pyautokit-organizer ~/Downloads --dry-run
-    $ pyautokit-crypto --coin BTC
+    $ pyautokit-organizer ~/Downloads --method category
+    $ pyautokit-crypto --coin EGLD
+    $ pyautokit-github list-repos --user Gzeu
+    $ pyautokit-browser screenshot https://example.com -o page.png
+    $ pyautokit-security genpass --length 20
+    $ pyautokit-backup create ./project --compression tar.gz
 """
 
 __version__ = "1.0.0"
@@ -47,6 +62,8 @@ from .data_processor import DataProcessor
 from .task_scheduler import TaskScheduler
 from .security_utils import SecurityUtils
 from .blockchain_monitor import BlockchainMonitor
+from .github_utils import GitHubUtils
+from .playwright_utils import PlaywrightUtils
 
 __all__ = [
     "FileOrganizer",
@@ -60,4 +77,6 @@ __all__ = [
     "TaskScheduler",
     "SecurityUtils",
     "BlockchainMonitor",
+    "GitHubUtils",
+    "PlaywrightUtils",
 ]
