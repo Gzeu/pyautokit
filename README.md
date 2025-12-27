@@ -11,23 +11,25 @@
 
 ## 🎯 Overview
 
-PyAutokit is a modular Python toolkit designed to automate common development and operations tasks. **Each module has a complete CLI** with argparse and can be used programmatically. All modules are standalone, well-documented, and tested.
+PyAutokit is a modular Python toolkit with **11 complete automation modules**. Each module has a **complete CLI** with argparse and can be used programmatically. All modules are standalone, well-documented, and tested.
 
 ## 📦 Installation
 
-### From PyPI (Recommended)
+### Quick Install
 
 ```bash
+# Basic installation
 pip install pyautokit
-```
 
-That's it! All commands are now available:
+# With browser automation (Playwright)
+pip install 'pyautokit[browser]'
+playwright install  # Download browser binaries
 
-```bash
-pyautokit --version
-pyautokit-organizer ~/Downloads --dry-run
-pyautokit-crypto --coin EGLD
-pyautokit-security genpass --length 20
+# With file watching
+pip install 'pyautokit[watch]'
+
+# With everything
+pip install 'pyautokit[all]'
 ```
 
 ### From Source
@@ -35,20 +37,7 @@ pyautokit-security genpass --length 20
 ```bash
 git clone https://github.com/Gzeu/pyautokit.git
 cd pyautokit
-pip install -e .
-```
-
-### With Optional Dependencies
-
-```bash
-# File watching support (for auto-organize)
-pip install pyautokit[watch]
-
-# Development tools
-pip install pyautokit[dev]
-
-# Everything
-pip install pyautokit[all]
+pip install -e '.[all]'
 ```
 
 See [INSTALLATION.md](INSTALLATION.md) for detailed installation guide.
@@ -56,37 +45,54 @@ See [INSTALLATION.md](INSTALLATION.md) for detailed installation guide.
 ## ⚡ Quick Start
 
 ```bash
-# After installation, try these commands:
-
-# Organize your Downloads folder
+# Organize files
 pyautokit-organizer ~/Downloads --method category --dry-run
 
-# Check EGLD price
-pyautokit-crypto --coin EGLD
+# Monitor crypto prices
+pyautokit-crypto --coin EGLD --coin BTC
 
 # Generate secure password
 pyautokit-security genpass --length 20
 
-# Convert CSV to JSON
-pyautokit-data convert data.csv --to json
+# GitHub automation
+pyautokit-github list-repos --user Gzeu
 
-# Create backup
-pyautokit-backup create ./myproject --compression tar.gz
+# Browser automation
+pyautokit-browser screenshot https://example.com -o page.png
+
+# Convert data
+pyautokit-data convert data.csv --to json
 ```
 
-## ✨ Features
+## ✨ All Modules (11 Total)
+
+| Module | CLI Command | Description | Test Coverage |
+|--------|-------------|-------------|---------------|
+| 📁 **File Organizer** | `pyautokit-organizer` | Organize files by category/date/size | 95%+ |
+| 🌐 **Web Scraper** | `pyautokit-scraper` | Scrape with BeautifulSoup4 | Partial |
+| 📧 **Email Automation** | `pyautokit-email` | SMTP with templates | Partial |
+| 💾 **Backup Manager** | `pyautokit-backup` | Versioned backups (ZIP/TAR/TAR.GZ) | Partial |
+| 📊 **Log Analyzer** | `pyautokit-logs` | Parse and analyze logs | Partial |
+| 📈 **Data Processor** | `pyautokit-data` | CSV/JSON conversion & transforms | Partial |
+| 🔐 **Security Utils** | `pyautokit-security` | Encryption, hashing, passwords | Partial |
+| ⛓️ **Blockchain Monitor** | `pyautokit-crypto` | Crypto price tracking | 80%+ |
+| 🔧 **API Client** | `pyautokit` | REST API with retry logic | Partial |
+| 🐙 **GitHub Utils** | `pyautokit-github` | Repo/Issue/PR management | 80%+ |
+| 🎭 **Playwright Browser** | `pyautokit-browser` | Browser automation & testing | 80%+ |
+
+## 📚 Feature Details
 
 ### 📁 File Organizer
-- Organize files by extension, date, category, or size
-- Smart categorization (Documents, Images, Videos, Code, etc.)
+- Organize by extension, date, category, or size
+- Smart categorization (Documents, Images, Videos, Code)
 - Dry-run mode for safe testing
 - Auto-watch mode for continuous organization
 - Duplicate handling (rename, skip, overwrite)
-- Comprehensive statistics
+- Directory statistics
 
 ### 🌐 Web Scraper
 - Ethical scraping with rate limiting
-- BeautifulSoup4 integration
+- BeautifulSoup4 for static sites
 - CSS selector support
 - Link extraction and text parsing
 - Session management
@@ -94,15 +100,17 @@ pyautokit-backup create ./myproject --compression tar.gz
 ### 📧 Email Automation
 - SMTP support (Gmail, custom servers)
 - Template-based personalization
-- Bulk email sending
+- Bulk email sending from CSV/JSON
 - Attachment support
 - HTML and plain text emails
+- Dry-run mode
 
 ### 💾 Backup Manager
 - Multiple compression formats (ZIP, TAR, TAR.GZ)
 - Version management (keep N backups)
 - Incremental backups
 - Easy restore functionality
+- Backup listing and filtering
 
 ### 📊 Log Analyzer
 - Parse common log formats
@@ -110,12 +118,13 @@ pyautokit-backup create ./myproject --compression tar.gz
 - IP address and email extraction
 - Timestamp analysis
 - Statistical summaries
+- Time range filtering
 
 ### 📈 Data Processor
 - CSV ↔ JSON conversion
 - Data filtering and transformation
-- Aggregation (sum, avg, min, max)
-- Deduplication
+- Aggregation (sum, avg, min, max, count)
+- Deduplication by key
 - Batch processing
 
 ### 🔐 Security Utils
@@ -124,6 +133,7 @@ pyautokit-backup create ./myproject --compression tar.gz
 - Secure password generation
 - Hashing utilities (MD5, SHA256, SHA512)
 - Token generation
+- Key generation
 
 ### ⛓️ Blockchain Monitor
 - Real-time crypto price monitoring
@@ -132,103 +142,85 @@ pyautokit-backup create ./myproject --compression tar.gz
 - Market cap and volume data
 - Trending coins detection
 - Price alerts
+- Continuous monitoring mode
 
-## 📚 Complete CLI Reference
+### 🐙 GitHub Utils (NEW!)
+- Create, list, delete repositories
+- Manage issues (create, list, close, update)
+- Manage pull requests (create, list, merge)
+- Create releases and tags
+- Trigger GitHub Actions workflows
+- Complete GitHub API integration
+- Authentication with tokens
+
+### 🎭 Playwright Browser Automation (NEW!)
+- Multi-browser support (Chromium, Firefox, WebKit)
+- Screenshot capture (full page, element-specific)
+- PDF generation from web pages
+- Web scraping (dynamic sites)
+- Form filling and submission
+- Click sequences and interactions
+- HTTP authentication
+- Mobile device emulation
+- Network request monitoring
+- JavaScript execution
+- Headless and headed modes
+
+## 💻 CLI Commands
 
 ### Available Commands
-
-After installation via pip, these commands are available:
 
 ```bash
 pyautokit              # Unified CLI entry point
 pyautokit-organizer    # File organization
-pyautokit-scraper      # Web scraping
-pyautokit-email        # Email automation  
+pyautokit-scraper      # Web scraping (BeautifulSoup)
+pyautokit-email        # Email automation
 pyautokit-backup       # Backup management
 pyautokit-logs         # Log analysis
 pyautokit-data         # Data processing
 pyautokit-security     # Encryption & security
 pyautokit-crypto       # Blockchain monitoring
+pyautokit-github       # GitHub automation (NEW!)
+pyautokit-browser      # Browser automation (NEW!)
 ```
 
-### 📁 File Organizer
+### Quick Examples
 
 ```bash
-# Organize by category
-pyautokit-organizer ~/Downloads --method category
-
-# Test without moving files
-pyautokit-organizer ~/Downloads --dry-run
-
-# Show statistics
-pyautokit-organizer ~/Downloads --stats
-
-# Auto-watch mode (requires watchdog)
+# File Organization
+pyautokit-organizer ~/Downloads --method category --dry-run
 pyautokit-organizer ~/Downloads --watch --interval 30
-```
 
-### ⛓️ Blockchain Monitor
-
-```bash
-# Check EGLD price
+# Crypto Monitoring
 pyautokit-crypto --coin EGLD
+pyautokit-crypto --coin BTC --coin ETH --monitor --interval 300
 
-# Monitor multiple coins
-pyautokit-crypto --coin EGLD --coin BTC --coin ETH
-
-# Continuous monitoring
-pyautokit-crypto --coin EGLD --monitor --interval 300
-
-# Show trending
-pyautokit-crypto --trending
-```
-
-### 🔐 Security Utils
-
-```bash
-# Generate password
+# Security
 pyautokit-security genpass --length 20
-
-# Encrypt file
 pyautokit-security encrypt file.txt file.enc --password secret
-
-# Hash file
 pyautokit-security hash file.txt --file --algorithm sha256
 
-# Generate token
-pyautokit-security token --length 32
-```
-
-### 📈 Data Processor
-
-```bash
-# Convert CSV to JSON
+# Data Processing
 pyautokit-data convert data.csv --to json
-
-# Filter data
 pyautokit-data filter data.json --field status=active
-
-# Aggregate
 pyautokit-data aggregate data.json --field price --operation avg
 
-# Remove duplicates
-pyautokit-data dedupe data.json --key email
-```
-
-### 💾 Backup Manager
-
-```bash
-# Create backup
+# Backup
 pyautokit-backup create ./myproject --compression tar.gz
-
-# List backups
 pyautokit-backup list
-
-# Restore
 pyautokit-backup restore backup.tar.gz ./restored
-```
 
-See complete CLI documentation in [README sections below](#complete-cli-reference) or run any command with `--help`.
+# GitHub (NEW!)
+pyautokit-github list-repos --user Gzeu
+pyautokit-github create-repo my-project --private
+pyautokit-github list-issues --owner Gzeu --repo pyautokit
+
+# Browser Automation (NEW!)
+pyautokit-browser screenshot https://example.com -o page.png --full-page
+pyautokit-browser pdf https://docs.com -o doc.pdf --format A4
+pyautokit-browser scrape https://news.com -s "titles:h1" -o results.json
+pyautokit-browser --browser firefox --headed screenshot https://example.com -o ff.png
+```
 
 ## 📖 Programmatic Usage
 
@@ -253,18 +245,56 @@ price_data = monitor.get_price("EGLD")
 print(f"EGLD: ${price_data['price']} ({price_data['change_24h']:.2f}%)")
 ```
 
-### Email Automation
+### GitHub Automation
 
 ```python
-from pyautokit import EmailClient
+from pyautokit import GitHubUtils
 
-client = EmailClient()
-recipients = [{"email": "user@test.com", "name": "Alice"}]
-results = client.send_templated_emails(
-    recipients,
-    "Hi \$name",
-    "Your project is ready!"
+gh = GitHubUtils(token="your-github-token")
+
+# Create repository
+repo = gh.create_repository("my-project", private=True)
+
+# Create issue
+issue = gh.create_issue(
+    "Gzeu", "pyautokit",
+    "Feature request",
+    "Add awesome feature"
 )
+
+# List PRs
+prs = gh.list_pull_requests("Gzeu", "pyautokit", state="open")
+```
+
+### Browser Automation
+
+```python
+import asyncio
+from pyautokit import PlaywrightUtils
+
+async def automate():
+    async with PlaywrightUtils() as pw:
+        # Screenshot
+        await pw.screenshot(
+            "https://example.com",
+            "page.png",
+            full_page=True
+        )
+        
+        # Scrape dynamic content
+        data = await pw.scrape(
+            "https://news.com",
+            {"titles": "h1", "links": "a"}
+        )
+        
+        # Fill form
+        await pw.fill_form(
+            "https://app.com/login",
+            {"#email": "user@test.com", "#password": "pass"},
+            submit_selector="#submit"
+        )
+
+asyncio.run(automate())
 ```
 
 ### Security Utils
@@ -273,8 +303,15 @@ results = client.send_templated_emails(
 from pyautokit import SecurityUtils
 
 utils = SecurityUtils()
+
+# Generate password
 password = utils.generate_password(length=20)
-print(f"Generated: {password}")
+
+# Encrypt file
+utils.encrypt_file("secret.txt", "secret.enc", password="mypass")
+
+# Hash file
+file_hash = utils.hash_file("file.txt", algorithm="sha256")
 ```
 
 ### Data Processing
@@ -284,29 +321,46 @@ from pyautokit import DataProcessor
 from pathlib import Path
 
 processor = DataProcessor()
+
+# Convert CSV to JSON
 data = processor.csv_to_json(Path("data.csv"))
-avg = processor.aggregate(data, "price", "avg")
+
+# Filter data
+filtered = processor.filter_data(data, {"status": "active"})
+
+# Aggregate
+avg_price = processor.aggregate(data, "price", "avg")
+print(f"Average price: ${avg_price:.2f}")
 ```
 
-See more examples in [examples/](examples/) directory.
+## 📚 Working Examples
 
-## 📚 Examples
+| Example | File | Description |
+|---------|------|-------------|
+| **File Organization** | `examples/organize_downloads.py` | Auto-organize with watch mode |
+| **Crypto Monitoring** | `examples/monitor_egld.py` | Real-time price monitoring |
+| **Web Scraping** | `examples/scrape_news.py` | Scrape news headlines |
+| **Bulk Emails** | `examples/send_bulk_emails.py` | Send templated emails |
+| **Backup Automation** | `examples/backup_project.py` | Automated backups |
+| **Log Analysis** | `examples/analyze_logs.py` | Parse server logs |
+| **GitHub Automation** | `examples/github_automation.py` | Repo & issue management |
+| **Browser Automation** | `examples/playwright_automation.py` | Screenshots, PDFs, scraping |
 
-Complete working examples:
+Run examples:
 
-| Example | Command |
-|---------|----------|
-| **Organize Downloads** | `python examples/organize_downloads.py --watch` |
-| **Monitor EGLD** | `python examples/monitor_egld.py` |
-| **Scrape News** | `python examples/scrape_news.py` |
-| **Bulk Emails** | `python examples/send_bulk_emails.py` |
-| **Backup Project** | `python examples/backup_project.py` |
-| **Analyze Logs** | `python examples/analyze_logs.py` |
+```bash
+python examples/organize_downloads.py --watch
+python examples/monitor_egld.py
+python examples/playwright_automation.py
+```
 
 ## 🧪 Testing
 
 ```bash
-# Run tests
+# Install dev dependencies
+pip install 'pyautokit[dev]'
+
+# Run all tests
 pytest
 
 # With coverage
@@ -314,9 +368,18 @@ pytest --cov=pyautokit --cov-report=html
 
 # Test specific module
 pytest tests/test_file_organizer.py -v
+pytest tests/test_blockchain_monitor.py -v
+pytest tests/test_playwright_utils.py -v
+
+# Run async tests
+pytest tests/test_playwright_utils.py -v -m asyncio
 ```
 
-**Current Coverage**: file_organizer.py = 95%+
+**Test Coverage:**
+- `file_organizer.py` - 95%+
+- `blockchain_monitor.py` - 80%+
+- `github_utils.py` - 80%+
+- `playwright_utils.py` - 80%+
 
 ## 📦 Publishing to PyPI
 
@@ -328,8 +391,8 @@ Quick reference:
 # Build
 python -m build
 
-# Upload to TestPyPI
-twine upload --repository testpypi dist/*
+# Check
+twine check dist/*
 
 # Upload to PyPI
 twine upload dist/*
@@ -339,46 +402,53 @@ twine upload dist/*
 
 ```
 pyautokit/
-├── pyautokit/              # Main package
-│   ├── __init__.py         # Package exports
-│   ├── __main__.py         # ✅ Unified CLI
-│   ├── file_organizer.py   # ✅ CLI + 95% tests
-│   ├── web_scraper.py      # ✅ Complete CLI
-│   ├── email_automation.py # ✅ Complete CLI
-│   ├── backup_manager.py   # ✅ Complete CLI
-│   ├── data_processor.py   # ✅ Complete CLI
-│   ├── security_utils.py   # ✅ Complete CLI
-│   └── blockchain_monitor.py # ✅ Complete CLI
-├── examples/               # Working examples
-├── tests/                  # Test suite
-├── .github/workflows/      # CI/CD pipelines
-├── setup.py                # ✅ PyPI setup
-├── pyproject.toml          # ✅ Build config
-├── PUBLISHING.md           # ✅ PyPI guide
-├── INSTALLATION.md         # ✅ Install guide
-└── CONTRIBUTING.md         # ✅ Contribution guide
+├── pyautokit/                  # Main package
+│   ├── __init__.py             # Package exports
+│   ├── __main__.py             # ✅ Unified CLI
+│   ├── file_organizer.py       # ✅ CLI + 95% tests
+│   ├── web_scraper.py          # ✅ Complete CLI
+│   ├── email_automation.py     # ✅ Complete CLI
+│   ├── backup_manager.py       # ✅ Complete CLI
+│   ├── log_analyzer.py         # ✅ Complete CLI
+│   ├── data_processor.py       # ✅ Complete CLI
+│   ├── security_utils.py       # ✅ Complete CLI
+│   ├── blockchain_monitor.py   # ✅ CLI + 80% tests
+│   ├── github_utils.py         # ✅ CLI + 80% tests (NEW!)
+│   └── playwright_utils.py     # ✅ CLI + 80% tests (NEW!)
+├── examples/                   # Working examples (8 files)
+├── tests/                      # Test suite (11 test files)
+├── .github/workflows/          # CI/CD pipelines
+├── setup.py                    # ✅ PyPI setup
+├── pyproject.toml              # ✅ Build config
+├── PUBLISHING.md               # ✅ PyPI guide
+├── INSTALLATION.md             # ✅ Install guide
+└── CONTRIBUTING.md             # ✅ Contribution guide
 ```
 
 ## 🤝 Contributing
 
-1. Fork repository
-2. Create feature branch
-3. Commit changes
-4. Push and create PR
+Contributions are welcome! Please:
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## 📝 License
 
-MIT License - Free for personal and commercial use.
+MIT License - Free for personal and commercial use. See [LICENSE](LICENSE) for details.
 
 ## 👤 Author
 
 **George Pricop**
-- Blockchain Developer & AI Automation Specialist  
-- GitHub: [@Gzeu](https://github.com/Gzeu)
-- Building on MultiversX (EGLD) ecosystem
-- Location: București, Romania
+- 🚀 Blockchain Developer & AI Automation Specialist
+- 💼 Building on MultiversX (EGLD) ecosystem
+- 📍 Constanța, Romania
+- 🐙 GitHub: [@Gzeu](https://github.com/Gzeu)
+- 🔗 [More projects](https://github.com/Gzeu?tab=repositories)
 
 ## 🔗 Links
 
@@ -388,7 +458,14 @@ MIT License - Free for personal and commercial use.
 - **Examples**: [Working examples](examples/)
 - **Installation**: [INSTALLATION.md](INSTALLATION.md)
 - **Publishing**: [PUBLISHING.md](PUBLISHING.md)
+- **Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md)
+
+## 🌟 Star History
+
+If you find PyAutokit useful, please give it a ⭐ on GitHub!
 
 ---
 
-**Built with ❤️ for automation enthusiasts. Install with `pip install pyautokit`! 🚀**
+**Built with ❤️ for automation enthusiasts.**
+
+**Install now**: `pip install pyautokit` 🚀
